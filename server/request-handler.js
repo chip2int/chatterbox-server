@@ -5,31 +5,68 @@
  * this file and include it in basic-server.js so that it actually works.
  * *Hint* Check out the node module documentation at http://nodejs.org/api/modules.html. */
 
-var handleRequest = function(request, response) {
+
+exports.storage = {
+  messages: [],
+
+  storeData: function (chatMsg) {
+    this.messages.push(chatMsg);
+  },
+
+  getData: function () {
+    return this.messages;
+  }
+};
+
+
+
+exports.handleRequest = function(request, response) {
+
   /* the 'request' argument comes from nodes http module. It includes info about the
-  request - such as what URL the browser is requesting. */
+  request - such as    URL the browser is requesting. */
 
   /* Documentation for both request and response can be found at
    * http://nodemanual.org/0.8.14/nodejs_ref_guide/http.html */
-
+  var statusCode = 200;
   console.log("Serving request type " + request.method + " for url " + request.url);
 
-  var statusCode = 200;
+  request.setEncoding('utf8');
+
+  if (request.method === 'POST') {
+      request.on('data', function(chatMsg) {
+        exports.storage.storeData(chatMsg);
+        statusCode = 201;
+    });
+  }
 
   /* Without this line, this server wouldn't work. See the note
    * below about CORS. */
   var headers = defaultCorsHeaders;
 
-  headers['Content-Type'] = "text/plain";
+  headers['Content-Type'] = "application/json";
 
+
+  if (request.url !== "http://127.0.0.1:8080/classes/room1") {
+    console.log("in 404");
+    statusCode = 404;
+  }
   /* .writeHead() tells our server what HTTP status code to send back */
   response.writeHead(statusCode, headers);
 
   /* Make sure to always call response.end() - Node will not send
-   * anything back to the client until you do. The string you pass to
+   * anything back to the client until you do. Te string you pass to
    * response.end() will be the body of the response - i.e. what shows
    * up in the browser.*/
-  response.end("Hello, World!");
+  //response.end("Hello, World!");
+
+
+
+  response.end('[' + exports.storage.getData() + ']');
+  
+  //var resToBeSent = JSON.stringify(exports.storage.getData());
+  // if (request.method === 'GET' && resToBeSent.length > 0)
+  //response.end(resToBeSent);
+
 };
 
 /* These headers will allow Cross-Origin Resource Sharing (CORS).
@@ -43,3 +80,13 @@ var defaultCorsHeaders = {
   "access-control-allow-headers": "content-type, accept",
   "access-control-max-age": 10 // Seconds.
 };
+
+
+
+
+
+
+
+
+
+
